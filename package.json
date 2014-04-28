@@ -19,5 +19,9 @@
     "gulp-jshint": "^1.5.5",
     "jshint-stylish": "^0.1.5",
     "mongoose": "^3.8.8"
-  }
+  },
+
+  "scripts": {
+    "start": "node ./bin/www"
+  },
 }
