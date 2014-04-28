@@ -5,8 +5,7 @@ var logger       = require('morgan')
 var cookieParser = require('cookie-parser')
 var bodyParser   = require('body-parser')
 
-var routes = require('./routes/index')
-var users  = require('./routes/users')
+var config = require('./config')
 
 
 var app = express()
@@ -38,15 +37,14 @@ app.get('/prospectives', function prospectives(req, res) {
 })
 
 
-var basicAuth = express.basicAuth(config.ADMIN_USERNAME, config.ADMIN_PASS)
-app.get('/admin', basicAuth, function admin(req, res) {
+app.get('/admin', function admin(req, res) {
   res.render('admin')
 })
 
 
 app.route('/api/availabilities')
   .get(function getAvailabilities(req, res) {
-    db.HalfHour.find()
+    // db.HalfHour.find()
     var availabilities = [
       {date: '2014-03-05',
        blocks: [
@@ -57,7 +55,7 @@ app.route('/api/availabilities')
     res.send(availabilities)
   })
   .post(function addAvailability(req, res) {
-    res.render('availability')
+    res.send('availability')
   })
 
 
@@ -83,7 +81,7 @@ if (app.get('env') == 'development') {
 }
 
 // Production error handler, no stacktraces leaked to user
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   res.status(err.status || 500)
   res.render('error', {
     message: err.message,

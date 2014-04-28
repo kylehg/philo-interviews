@@ -23,5 +23,5 @@
 
   "scripts": {
     "start": "node ./bin/www"
-  },
+  }
 }
