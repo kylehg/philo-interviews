@@ -1,0 +1,16 @@
+{
+  "name": "interviewr",
+  "version": "0.0.1",
+  "private": true,
+
+  "dependencies": {
+    "express": "^4.1.1",
+    "rsvp": "^3.0.6"
+  },
+
+  "devDependencies": {
+    "gulp": "^3.6.2",
+    "gulp-jshint": "^1.5.5",
+    "jshint-stylish": "^0.1.5"
+  }
+}

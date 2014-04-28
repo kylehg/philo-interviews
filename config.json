@@ -1,0 +1,8 @@
+{
+    "DEBUG": true,
+    "SECRET": "shh, it's a secret!",
+    "MONGO_URL": "mongodb://localhost/interviewr",
+
+    "ADMIN_USERNAME": "",
+    "ADMIN_PASS": ""
+}
