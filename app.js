@@ -1,10 +1,11 @@
+var bodyParser   = require('body-parser')
+var cookieParser = require('cookie-parser')
 var express      = require('express')
-var path         = require('path')
 var favicon      = require('static-favicon')
 var logger       = require('morgan')
-var cookieParser = require('cookie-parser')
-var bodyParser   = require('body-parser')
+var path         = require('path')
 
+var api    = require('./api')
 var config = require('./config')
 
 
@@ -42,21 +43,7 @@ app.get('/admin', function admin(req, res) {
 })
 
 
-app.route('/api/availabilities')
-  .get(function getAvailabilities(req, res) {
-    // db.HalfHour.find()
-    var availabilities = [
-      {date: '2014-03-05',
-       blocks: [
-         {start:         '0900',
-          end:           '1330',
-          userId:        '52e2c8c387f163948868504d',
-          isProspective: true}]}]
-    res.send(availabilities)
-  })
-  .post(function addAvailability(req, res) {
-    res.send('availability')
-  })
+app.use('/api', api)
 
 
 // Catch 404 and forwarding to error handler
