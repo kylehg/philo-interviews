@@ -6,9 +6,9 @@ var rsvp    = require('rsvp')
 var db      = require('./db')
 
 
+var HTTP_OK          = 200
+var HTTP_CREATED     = 201
 var HTTP_BAD_REQUEST = 400
-var api = express.Router()
-
 
 /** Create a function to handle JSON API responses */
 function makeApiResponder(req, res) {
@@ -17,7 +17,7 @@ function makeApiResponder(req, res) {
 
     // If the status code is an error (non-200), set the `error` field,
     // otherwise set the `data`
-    var statusCode = opt_statusCode || 200
+    var statusCode = opt_statusCode || HTTP_OK
     if (2 === (statusCode / 100) | 0) { // Do integer division
       result = resultOrErrMsg
     } else {
@@ -33,8 +33,10 @@ function makeApiResponder(req, res) {
 }
 
 
+var apiRouter = express.Router()
+
 // The availability resource
-api.route('/availability')
+apiRouter.route('/availability')
 
   /** Get the availabilities in a range of dates */
   .get(function getAvailabilities(req, res) {
@@ -78,7 +80,7 @@ api.route('/availability')
       var halfHour = new db.HalfHour({user: user, at: datetime})
       return rsvp.denodeify(halfHour.save)()
     })).then(function (halfHours) {
-      respond({success: true, blocksAdded: halfHours.length}, 201)
+      respond({success: true, blocksAdded: halfHours.length}, HTTP_CREATED)
     }, function (err) {
       respond(err.message, 500)
       console.error(err.stack)
@@ -86,4 +88,4 @@ api.route('/availability')
   })
 
 
-module.exports = api
+module.exports = apiRouter
