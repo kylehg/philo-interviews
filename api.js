@@ -1,35 +1,44 @@
+/**
+ * @fileoverview The API endpoints
+ */
 var express = require('express')
 var rsvp    = require('rsvp')
-
-var db = require('./db')
+var db      = require('./db')
 
 
 var HTTP_BAD_REQUEST = 400
-
 var api = express.Router()
 
 
-function apiResponse(req, res) {
-  return function (resultOrErrMsg, responseCode) {
-    var result = null
-    var err = null
+/** Create a function to handle JSON API responses */
+function makeApiResponder(req, res) {
+  return function sendApiResponse(resultOrErrMsg, opt_statusCode) {
+    var result, err
 
-    responseCode = responseCode || 200
-    if (2 === (responseCode / 100) | 0) {
-      err = resultOrErrMsg
-    } else {
+    // If the status code is an error (non-200), set the `error` field,
+    // otherwise set the `data`
+    var statusCode = opt_statusCode || 200
+    if (2 === (statusCode / 100) | 0) { // Do integer division
       result = resultOrErrMsg
+    } else {
+      err = resultOrErrMsg
     }
 
-    res.send(responseCode, {result: result, error: err})
+    res.send(statusCode, {
+      data:    result || null,
+      error:   err || null,
+      request: 'GET' == req.method.toUpperCase() ? req.query : req.body
+    })
   }
 }
 
 
+// The availability resource
 api.route('/availability')
 
+  /** Get the availabilities in a range of dates */
   .get(function getAvailabilities(req, res) {
-    var respond = apiResponse(req, res)
+    var respond = makeApiResponder(req, res)
 
     var fromParam = req.query.from
     var toParam   = req.query.to
@@ -43,21 +52,21 @@ api.route('/availability')
 
     // Lookup availabilities in range
     db.HalfHour.find({at: {$gte: fromDate, $lte: toDate}}).exec()
-      .then(respond)
-      .catch(function (err) {
+      .then(respond, function (err) {
         respond(err.message, 500)
         console.error(err.stack)
       })
   })
 
+  /** Set the availability for a user */
   .post(function addAvailability(req, res) {
-    var respond = apiResponse(req, res)
+    var respond = makeApiResponder(req, res)
 
     var user         = req.body.user
     var availability = req.body.availability || []
 
     if (!(user && user.name && user.email && user.type)) {
-      respond('Invalid user: ' + user, HTTP_BAD_REQUEST)
+      respond('Invalid user object', HTTP_BAD_REQUEST)
     }
 
     rsvp.all(availability.map(function (block) {
@@ -68,9 +77,9 @@ api.route('/availability')
 
       var halfHour = new db.HalfHour({user: user, at: datetime})
       return rsvp.denodeify(halfHour.save)()
-    }).then(function (halfHours) {
+    })).then(function (halfHours) {
       respond({success: true, blocksAdded: halfHours.length}, 201)
-    }).catch(function (err) {
+    }, function (err) {
       respond(err.message, 500)
       console.error(err.stack)
     })
