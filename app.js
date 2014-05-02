@@ -1,12 +1,14 @@
+/**
+ * @fileoverview Main Express app
+ */
 var bodyParser   = require('body-parser')
 var cookieParser = require('cookie-parser')
 var express      = require('express')
-var favicon      = require('static-favicon')
 var logger       = require('morgan')
 var path         = require('path')
-
-var api    = require('./api')
-var config = require('./config')
+var favicon      = require('static-favicon')
+var apiRouter    = require('./api')
+var config       = require('./config')
 
 
 var app = express()
@@ -43,7 +45,7 @@ app.get('/admin', function admin(req, res) {
 })
 
 
-app.use('/api', api)
+app.use('/api', apiRouter)
 
 
 // Catch 404 and forwarding to error handler
