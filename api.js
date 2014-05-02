@@ -3,12 +3,15 @@
  */
 var express = require('express')
 var rsvp    = require('rsvp')
+
 var db      = require('./db')
 
 
 var HTTP_OK          = 200
 var HTTP_CREATED     = 201
 var HTTP_BAD_REQUEST = 400
+var HTTP_SERVER_ERR  = 500
+
 
 /** Create a function to handle JSON API responses */
 function makeApiResponder(req, res) {
@@ -16,7 +19,7 @@ function makeApiResponder(req, res) {
     var result, err
 
     // If the status code is an error (non-200), set the `error` field,
-    // otherwise set the `data`
+    // otherwise set `data`
     var statusCode = opt_statusCode || HTTP_OK
     if (2 === (statusCode / 100) | 0) { // Do integer division
       result = resultOrErrMsg
@@ -49,15 +52,15 @@ apiRouter.route('/availability')
     var fromDate = new Date(formParam)
     var toDate   = toParam ? new Date(toParam) : new Date()
     if (isNaN(fromDate) || isNaN(toDate)) {
-      respond('Invalid date params: "' + fromParam + '", "' + toParam + '"', HTTP_BAD_REQUEST)
+      respond('Invalid date parameters', HTTP_BAD_REQUEST)
     }
 
     // Lookup availabilities in range
     db.HalfHour.find({at: {$gte: fromDate, $lte: toDate}}).exec()
-      .then(respond, function (err) {
-        respond(err.message, 500)
-        console.error(err.stack)
-      })
+    .then(respond, function (err) {
+      respond(err.message, 500)
+      console.error(err.stack)
+    })
   })
 
   /** Set the availability for a user */
@@ -79,10 +82,10 @@ apiRouter.route('/availability')
 
       var halfHour = new db.HalfHour({user: user, at: datetime})
       return rsvp.denodeify(halfHour.save)()
-    })).then(function (halfHours) {
-      respond({success: true, blocksAdded: halfHours.length}, HTTP_CREATED)
+    })).then(function (blocks) {
+      respond({success: true, blocksAdded: blocks.length}, HTTP_CREATED)
     }, function (err) {
-      respond(err.message, 500)
+      respond(err.message, HTTP_SERVER_ERR)
       console.error(err.stack)
     })
   })
