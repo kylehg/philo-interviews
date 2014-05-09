@@ -1,24 +1,23 @@
 /**
- * Database interfaces
+ * @fileoverview Database interfaces
  */
-var mongoose = require('mongoose')
-var config = require('./config')
-
+var _         = require('lodash')
+var mongoose  = require('mongoose')
+var config    = require('./config')
+var constants = require('./constants')
 
 mongoose.connect(config.MONGO_URL)
 
-var UserSchema = new mongoose.Schema()
-
 var HalfHourSchema = new mongoose.Schema({
-  at: {type: Date, index: true},
+  at: {type: Date, index: true, unique: true},
   user: {
-    name: String,
-    email: String,
-    type: {type: String, enum: ['interviewer', 'baby', 'prospective']}
+    name:  {type: String, required: true},
+    email: {type: String, required: true},
+    type:  {type: String, required: true, enum: _.values(constants.USER_TYPE)},
   },
 }, {autoIndex: config.DEBUG})
 
 module.exports = {
-  conn: mongoose.connection,
+  conn:     mongoose.connection,
   HalfHour: mongoose.model('HalfHour', HalfHourSchema),
 }

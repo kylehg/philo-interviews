@@ -1,26 +1,25 @@
 /**
  * @fileoverview The API endpoints
  */
-var express = require('express')
-var rsvp    = require('rsvp')
+var express   = require('express')
+var _         = require('lodash')
+var rsvp      = require('rsvp')
+var constants = require('./constants')
+var db        = require('./db')
 
-var db      = require('./db')
-
-
-var HTTP_OK          = 200
-var HTTP_CREATED     = 201
-var HTTP_BAD_REQUEST = 400
-var HTTP_SERVER_ERR  = 500
-
+var ERR  = constants.ERR_MSGS
+var HTTP = constants.HTTP
 
 /** Create a function to handle JSON API responses */
 function makeApiResponder(req, res) {
-  return function sendApiResponse(resultOrErrMsg, opt_statusCode) {
+
+  /** Given some data and an optional HTTP status code, send an API response */
+  function apiRespond(resultOrErrMsg, opt_statusCode) {
     var result, err
 
     // If the status code is an error (non-200), set the `error` field,
     // otherwise set `data`
-    var statusCode = opt_statusCode || HTTP_OK
+    var statusCode = opt_statusCode || HTTP.OK
     if (2 === (statusCode / 100) | 0) { // Do integer division
       result = resultOrErrMsg
     } else {
@@ -33,8 +32,15 @@ function makeApiResponder(req, res) {
       request: 'GET' == req.method.toUpperCase() ? req.query : req.body
     })
   }
-}
 
+  /** Given a JavaScript Error object, send a generic server error */
+  apiRespond.err = function (err) {
+    apiRespond(err.message, HTTP.SERVER_ERR)
+    console.error(err.stack)
+  }
+
+  return apiRespond
+}
 
 var apiRouter = express.Router()
 
@@ -52,15 +58,22 @@ apiRouter.route('/availability')
     var fromDate = new Date(formParam)
     var toDate   = toParam ? new Date(toParam) : new Date()
     if (isNaN(fromDate) || isNaN(toDate)) {
-      respond('Invalid date parameters', HTTP_BAD_REQUEST)
+      respond(ERR.INVALID_DATE, HTTP.BAD_REQUEST)
     }
 
     // Lookup availabilities in range
     db.HalfHour.find({at: {$gte: fromDate, $lte: toDate}}).exec()
-    .then(respond, function (err) {
-      respond(err.message, 500)
-      console.error(err.stack)
-    })
+    .then(function (blocks) {
+      var coalatedBlocks = _.chain(blocks)
+        .sortBy('at')
+        .groupBy('at')
+        .valueOf()
+        .map(function (blockArr) {
+          return {at: blockArr[0].at, users: _.pluck(blockArr, 'user')}
+        })
+
+        respond(coalatedBlocks)
+    }, respond.err)
   })
 
   /** Set the availability for a user */
@@ -71,23 +84,21 @@ apiRouter.route('/availability')
     var availability = req.body.availability || []
 
     if (!(user && user.name && user.email && user.type)) {
-      respond('Invalid user object', HTTP_BAD_REQUEST)
+      respond(ERR.INVALID_USER, HTTP.BAD_REQUEST)
     }
 
-    rsvp.all(availability.map(function (block) {
+    var blocks = availability.map(function (block) {
       var datetime = new Date(block)
       if (isNaN(datetime)) {
-        respond('Invalid availability block provided: ' + datetime, HTTP_BAD_REQUEST)
+        respond(ERR.INVALID_BLOCK + ': ' + datetime, HTTP.BAD_REQUEST)
       }
 
       var halfHour = new db.HalfHour({user: user, at: datetime})
       return rsvp.denodeify(halfHour.save)()
-    })).then(function (blocks) {
-      respond({success: true, blocksAdded: blocks.length}, HTTP_CREATED)
-    }, function (err) {
-      respond(err.message, HTTP_SERVER_ERR)
-      console.error(err.stack)
     })
+    rsvp.all(blocks).then(function (blocks) {
+      respond({success: true, blocksAdded: blocks.length}, HTTP.CREATED)
+    }, respond.err)
   })
 
 
