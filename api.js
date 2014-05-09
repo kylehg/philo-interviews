@@ -29,7 +29,7 @@ function makeApiResponder(req, res) {
     res.send(statusCode, {
       data:    result || null,
       error:   err || null,
-      request: 'GET' == req.method.toUpperCase() ? req.query : req.body
+      request: 'GET' == req.method.toUpperCase() ? req.query : req.body,
     })
   }
 
@@ -100,6 +100,5 @@ apiRouter.route('/availability')
       respond({success: true, blocksAdded: blocks.length}, HTTP.CREATED)
     }, respond.err)
   })
-
 
 module.exports = apiRouter
