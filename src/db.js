@@ -3,7 +3,7 @@
  */
 var _         = require('lodash')
 var mongoose  = require('mongoose')
-var config    = require('./config')
+var config    = require('../config')
 var constants = require('./constants')
 
 mongoose.connect(config.MONGO_URL)
