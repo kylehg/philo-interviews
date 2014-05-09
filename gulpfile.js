@@ -1,11 +1,8 @@
-var gulp = require('gulp')
-
+var gulp    = require('gulp')
 var jshint  = require('gulp-jshint')
 var stylish = require('jshint-stylish')
 
-
-var SRC = ['./*.js', './**/*.js', '!./node_modules/**/*.js']
-
+var SRC = ['./src/*.js']
 
 gulp.task('lint', function () {
   return gulp.src(SRC)
